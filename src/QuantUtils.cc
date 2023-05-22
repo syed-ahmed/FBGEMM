@@ -431,14 +431,9 @@ FBGEMM_API void Requantize<uint8_t>(
     int num_threads) {
   int64_t i_begin, i_end;
   fbgemmPartition1D(thread_id, num_threads, len, i_begin, i_end);
-  if (params.target_qparams.precision == 8 && cpuinfo_initialize() &&
-      fbgemmHasAvx2Support()) {
-    RequantizeAvx2(&src[i_begin], &dst[i_begin], i_end - i_begin, params);
-  } else {
     for (int64_t i = i_begin; i < i_end; ++i) {
       dst[i] = Requantize<uint8_t>(src[i], params);
     }
-  }
 }
 
 template <typename T>
@@ -451,15 +446,9 @@ FBGEMM_API void RequantizeFixedPoint(
     int num_threads) {
   int64_t i_begin, i_end;
   fbgemmPartition1D(thread_id, num_threads, len, i_begin, i_end);
-  if (std::is_same<T, uint8_t>::value && params.target_qparams.precision == 8 &&
-      cpuinfo_initialize() && fbgemmHasAvx2Support()) {
-    RequantizeFixedPointAvx2(
-        &src[i_begin], &dst[i_begin], i_end - i_begin, params);
-  } else {
     for (int64_t i = i_begin; i < i_end; ++i) {
       dst[i] = RequantizeFixedPoint<T>(src[i], params);
     }
-  }
 }
 
 #define FBGEMM_SPECIALIZED_REQUANTIZE(T)                            \
@@ -492,15 +481,9 @@ FBGEMM_API void RequantizeFixedPoint<uint8_t>(
   int64_t i_begin, i_end;
   fbgemmPartition1D(thread_id, num_threads, len, i_begin, i_end);
 
-  if (params.target_qparams.precision == 8 && cpuinfo_initialize() &&
-      fbgemmHasAvx2Support()) {
-    RequantizeFixedPointAvx2(
-        &src[i_begin], &dst[i_begin], i_end - i_begin, params);
-  } else {
     for (int64_t i = i_begin; i < i_end; ++i) {
       dst[i] = RequantizeFixedPoint<uint8_t>(src[i], params);
     }
-  }
 }
 
 template <typename InputType>
@@ -593,28 +576,8 @@ void FloatOrHalfToFusedNBitRowwiseQuantizedSBHalf(
     throw std::runtime_error("Unsupported number of columns");
   }
 
-  if (cpuinfo_initialize() && fbgemmHasAvx2Support()) {
-    switch (bit_rate) {
-      case 2:
-        FloatOrHalfToFusedNBitRowwiseQuantizedSBHalfAvx2<InputType, 2>(
-            input, input_rows, input_columns, output);
-        break;
-      case 4:
-        FloatOrHalfToFusedNBitRowwiseQuantizedSBHalfAvx2<InputType, 4>(
-            input, input_rows, input_columns, output);
-        break;
-      case 8:
-        FloatOrHalfToFusedNBitRowwiseQuantizedSBHalfAvx2<InputType, 8>(
-            input, input_rows, input_columns, output);
-        break;
-      default:
-        FloatOrHalfToFusedNBitRowwiseQuantizedSBHalfRef<InputType>(
-            bit_rate, input, input_rows, input_columns, output);
-    }
-  } else {
     FloatOrHalfToFusedNBitRowwiseQuantizedSBHalfRef<InputType>(
         bit_rate, input, input_rows, input_columns, output);
-  }
 }
 
 template <typename InputType>
@@ -663,13 +626,8 @@ void FloatOrHalfToFused8BitRowwiseQuantizedSBFloat(
     size_t input_rows,
     int input_columns,
     std::uint8_t* output) {
-  if (cpuinfo_initialize() && fbgemmHasAvx2Support()) {
-    FloatOrHalfToFused8BitRowwiseQuantizedSBFloatAvx2<InputType>(
-        input, input_rows, input_columns, output);
-  } else {
     FloatOrHalfToFused8BitRowwiseQuantizedSBFloatRef<InputType>(
         input, input_rows, input_columns, output);
-  }
 }
 
 template <typename OutputType>
@@ -716,28 +674,8 @@ void FusedNBitRowwiseQuantizedSBHalfToFloatOrHalf(
     size_t input_rows,
     int input_columns,
     OutputType* output) {
-  if (cpuinfo_initialize() && fbgemmHasAvx2Support()) {
-    switch (bit_rate) {
-      case 2:
-        FusedNBitRowwiseQuantizedSBHalfToFloatOrHalfAvx2<OutputType, 2>(
-            input, input_rows, input_columns, output);
-        break;
-      case 4:
-        FusedNBitRowwiseQuantizedSBHalfToFloatOrHalfAvx2<OutputType, 4>(
-            input, input_rows, input_columns, output);
-        break;
-      case 8:
-        FusedNBitRowwiseQuantizedSBHalfToFloatOrHalfAvx2<OutputType, 8>(
-            input, input_rows, input_columns, output);
-        break;
-      default:
-        FusedNBitRowwiseQuantizedSBHalfToFloatOrHalfRef<OutputType>(
-            bit_rate, input, input_rows, input_columns, output);
-    }
-  } else {
     FusedNBitRowwiseQuantizedSBHalfToFloatOrHalfRef<OutputType>(
         bit_rate, input, input_rows, input_columns, output);
-  }
 }
 
 template <typename OutputType>
@@ -772,13 +710,8 @@ void Fused8BitRowwiseQuantizedSBFloatToFloatOrHalf(
     size_t input_rows,
     int input_columns,
     OutputType* output) {
-  if (cpuinfo_initialize() && fbgemmHasAvx2Support()) {
-    Fused8BitRowwiseQuantizedSBFloatToFloatOrHalfAvx2<OutputType>(
-        input, input_rows, input_columns, output);
-  } else {
     Fused8BitRowwiseQuantizedSBFloatToFloatOrHalfRef<OutputType>(
         input, input_rows, input_columns, output);
-  }
 }
 
 #define INSTANTIATE_QuantizationFunctions(type)                                \

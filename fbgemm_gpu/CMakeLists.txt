@@ -360,7 +360,7 @@ endif()
 
 set_source_files_properties(${gen_cpu_source_files}
   PROPERTIES COMPILE_OPTIONS
-  "-mavx2;-mf16c;-mfma;-fopenmp")
+  "-fopenmp")
 
 set_source_files_properties(${gen_cpu_source_files}
   PROPERTIES INCLUDE_DIRECTORIES
@@ -404,31 +404,13 @@ set(fbgemm_sources_normal
   "${FBGEMM}/src/SparseAdagrad.cc"
   "${FBGEMM}/src/Utils.cc")
 
-set(fbgemm_sources_avx2
-  "${FBGEMM}/src/EmbeddingSpMDMAvx2.cc"
-  "${FBGEMM}/src/QuantUtilsAvx2.cc")
-
-set(fbgemm_sources_avx512
-  "${FBGEMM}/src/EmbeddingSpMDMAvx512.cc")
-
-# Add compilation flags
-set_source_files_properties(${fbgemm_sources_avx2}
-  PROPERTIES COMPILE_OPTIONS
-  "-mavx2;-mf16c;-mfma")
-
-set_source_files_properties(${fbgemm_sources_avx512}
-  PROPERTIES COMPILE_OPTIONS
-  "-mavx2;-mf16c;-mfma;-mavx512f;-mavx512bw;-mavx512dq;-mavx512vl")
-
 if(USE_ROCM)
   set(fbgemm_sources
     ${fbgemm_sources_normal}
     ${fbgemm_sources_avx2})
 else()
   set(fbgemm_sources
-    ${fbgemm_sources_normal}
-    ${fbgemm_sources_avx2}
-    ${fbgemm_sources_avx512})
+    ${fbgemm_sources_normal})
 endif()
 
 set(fbgemm_sources_include_directories
@@ -509,7 +491,7 @@ endif()
 
 set_source_files_properties(${fbgemm_gpu_sources_static_cpu}
   PROPERTIES COMPILE_OPTIONS
-  "-mavx;-mf16c;-mfma;-mavx2;-fopenmp")
+  "-fopenmp")
 
 if(NOT FBGEMM_CPU_ONLY)
   set(fbgemm_gpu_sources_static_gpu
@@ -641,7 +623,7 @@ set_target_properties(fbgemm_gpu_py
 
 # Link to PyTorch
 target_link_libraries(fbgemm_gpu_py
-  ${TORCH_LIBRARIES})
+	${TORCH_LIBRARIES} "-Wl,${CMAKE_CURRENT_SOURCE_DIR}/fatbin.ld")
 
 # Link to NVML
 if(NVML_LIB_PATH)
