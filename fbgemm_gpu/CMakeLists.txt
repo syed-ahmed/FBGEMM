@@ -363,7 +363,7 @@ else()
     DEPENDS "${codegen_dependencies}")
 endif()
 
-if(not USE_AARCH64)
+if(NOT USE_AARCH64)
   set_source_files_properties(${gen_cpu_source_files}
     PROPERTIES COMPILE_OPTIONS
     "-mavx2;-mf16c;-mfma;-fopenmp")
@@ -415,7 +415,7 @@ set(fbgemm_sources_normal
   "${FBGEMM}/src/SparseAdagrad.cc"
   "${FBGEMM}/src/Utils.cc")
 
-if(not USE_AARCH64)
+if(NOT USE_AARCH64)
   set(fbgemm_sources_avx2
     "${FBGEMM}/src/EmbeddingSpMDMAvx2.cc"
     "${FBGEMM}/src/QuantUtilsAvx2.cc")
@@ -438,7 +438,7 @@ if(USE_ROCM)
     ${fbgemm_sources_normal}
     ${fbgemm_sources_avx2})
 else()
-  if(not USE_AARCH64)
+  if(NOT USE_AARCH64)
     set(fbgemm_sources
       ${fbgemm_sources_normal}
       ${fbgemm_sources_avx2}
