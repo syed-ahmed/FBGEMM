@@ -31,11 +31,6 @@ option(FBGEMM_CPU_ONLY  "Build FBGEMM_GPU without GPU support" OFF)
 option(USE_ROCM         "Build FBGEMM_GPU for ROCm" OFF)
 option(USE_AARCH64      "Build FBGEMM_GPU for ARM" OFF)
 
-if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
-  message("AARCH64 CPU detected; setting to AARCH64 build")
-  set(USE_AARCH64 ON)
-endif()
-
 if(((EXISTS "/opt/rocm/") OR (EXISTS $ENV{ROCM_PATH}))
    AND NOT (EXISTS "/bin/nvcc"))
   message("AMD GPU detected; setting to ROCm build")
@@ -105,6 +100,10 @@ if(SKBUILD)
   BLOCK_PRINT("The project is built using scikit-build")
 endif()
 
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
+  message("AARCH64 CPU detected; setting to AARCH64 build")
+  set(USE_AARCH64 ON)
+endif()
 
 ################################################################################
 # PyTorch Dependencies Setup
