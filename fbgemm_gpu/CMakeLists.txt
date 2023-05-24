@@ -29,6 +29,12 @@ set(THIRDPARTY ${FBGEMM}/third_party)
 
 option(FBGEMM_CPU_ONLY  "Build FBGEMM_GPU without GPU support" OFF)
 option(USE_ROCM         "Build FBGEMM_GPU for ROCm" OFF)
+option(USE_AARCH64      "Build FBGEMM_GPU for ARM" OFF)
+
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "aarch64")
+  message("AARCH64 CPU detected; setting to AARCH64 build")
+  set(USE_AARCH64 ON)
+endif()
 
 if(((EXISTS "/opt/rocm/") OR (EXISTS $ENV{ROCM_PATH}))
    AND NOT (EXISTS "/bin/nvcc"))
@@ -358,9 +364,15 @@ else()
     DEPENDS "${codegen_dependencies}")
 endif()
 
-set_source_files_properties(${gen_cpu_source_files}
-  PROPERTIES COMPILE_OPTIONS
-  "-fopenmp")
+if(not USE_AARCH64)
+  set_source_files_properties(${gen_cpu_source_files}
+    PROPERTIES COMPILE_OPTIONS
+    "-mavx2;-mf16c;-mfma;-fopenmp")
+else()
+  set_source_files_properties(${gen_cpu_source_files}
+    PROPERTIES COMPILE_OPTIONS
+    "-fopenmp")
+endif()
 
 set_source_files_properties(${gen_cpu_source_files}
   PROPERTIES INCLUDE_DIRECTORIES
@@ -404,13 +416,39 @@ set(fbgemm_sources_normal
   "${FBGEMM}/src/SparseAdagrad.cc"
   "${FBGEMM}/src/Utils.cc")
 
+if(not USE_AARCH64)
+  set(fbgemm_sources_avx2
+    "${FBGEMM}/src/EmbeddingSpMDMAvx2.cc"
+    "${FBGEMM}/src/QuantUtilsAvx2.cc")
+
+  set(fbgemm_sources_avx512
+    "${FBGEMM}/src/EmbeddingSpMDMAvx512.cc")
+
+  # Add compilation flags
+  set_source_files_properties(${fbgemm_sources_avx2}
+    PROPERTIES COMPILE_OPTIONS
+    "-mavx2;-mf16c;-mfma")
+
+  set_source_files_properties(${fbgemm_sources_avx512}
+    PROPERTIES COMPILE_OPTIONS
+    "-mavx2;-mf16c;-mfma;-mavx512f;-mavx512bw;-mavx512dq;-mavx512vl")
+endif()
+
 if(USE_ROCM)
   set(fbgemm_sources
     ${fbgemm_sources_normal}
     ${fbgemm_sources_avx2})
 else()
-  set(fbgemm_sources
-    ${fbgemm_sources_normal})
+  if(not USE_AARCH64)
+    set(fbgemm_sources
+      ${fbgemm_sources_normal}
+      ${fbgemm_sources_avx2}
+      ${fbgemm_sources_avx512})
+      ${fbgemm_sources_normal})
+  else()
+    set(fbgemm_sources
+      ${fbgemm_sources_normal})
+  endif()
 endif()
 
 set(fbgemm_sources_include_directories
@@ -489,9 +527,15 @@ if(NOT FBGEMM_CPU_ONLY)
   endif()
 endif()
 
-set_source_files_properties(${fbgemm_gpu_sources_static_cpu}
-  PROPERTIES COMPILE_OPTIONS
-  "-fopenmp")
+if(NOT USE_AARCH64)
+  set_source_files_properties(${fbgemm_gpu_sources_static_cpu}
+    PROPERTIES COMPILE_OPTIONS
+    "-mavx;-mf16c;-mfma;-mavx2;-fopenmp")
+else()
+  set_source_files_properties(${fbgemm_gpu_sources_static_cpu}
+    PROPERTIES COMPILE_OPTIONS
+    "-fopenmp")
+endif()
 
 if(NOT FBGEMM_CPU_ONLY)
   set(fbgemm_gpu_sources_static_gpu

@@ -1069,6 +1069,36 @@ typename EmbeddingSpMDMKernelSignature<inType, indxType, offsetType, outType>::
     };
   }
 
+#ifndef __aarch64__
+  if ((std::is_same<inType, float>::value ||
+       std::is_same<inType, uint16_t>::value) &&
+      block_size == 1 && isYmm(isa) && output_stride == block_size &&
+      input_stride == block_size && std::is_same<outType, float>::value) {
+    return
+        [=](int64_t output_size,
+            int64_t index_size,
+            int64_t data_size,
+            const inType* input,
+            const indxType* indices,
+            const offsetType* offsets_or_lengths,
+            const float* weights, // optional, can be null for non-weighted sum
+            outType* out) {
+          return internal::EmbeddingSpMDMBlockSize1_(
+              output_size,
+              index_size,
+              data_size,
+              input,
+              indices,
+              offsets_or_lengths,
+              weights,
+              normalize_by_lengths,
+              reinterpret_cast<float*>(out),
+              is_weight_positional,
+              use_offsets,
+              isbf16);
+        };
+  } else
+#endif
   if (isZmm(isa)) {
     static GenEmbeddingSpMDMLookup<
         inType,
@@ -1532,15 +1562,41 @@ void compressed_indices_remap(
   }
 
   const inst_set_t isa = fbgemmInstructionSet();
+#ifndef __aarch64__
+  if (isZmm(isa)) {
+#ifndef __HIP_PLATFORM_HCC__
+    if (weights == nullptr) {
+      internal::compressed_indices_remap_avx512<IndexType, false>(
+          offsets_len,
+          indices,
+          compressed_indices_mapping,
+          offsets,
+          weights,
+          out_indices,
+          out_offsets,
+          out_weights);
+    } else {
+      internal::compressed_indices_remap_avx512<IndexType, true>(
+          offsets_len,
+          indices,
+          compressed_indices_mapping,
+          offsets,
+          weights,
+          out_indices,
+          out_offsets,
+          out_weights);
+    }
+#endif
+  } else 
+#endif
+  {
     compressed_indices_remap_ref<IndexType>(
         offsets_len,
         indices,
-        compressed_indices_mapping,
-        offsets,
-        weights,
         out_indices,
         out_offsets,
         out_weights);
+  }
 }
 
 #define INSTANTIATE_REMAP_BASE(INDEX_TYPE)           \
