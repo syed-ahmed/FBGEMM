@@ -667,7 +667,7 @@ set_target_properties(fbgemm_gpu_py
 
 # Link to PyTorch
 target_link_libraries(fbgemm_gpu_py
-	${TORCH_LIBRARIES} "-Wl,${CMAKE_CURRENT_SOURCE_DIR}/fatbin.ld")
+  ${TORCH_LIBRARIES} "-Wl,${CMAKE_CURRENT_SOURCE_DIR}/fatbin.ld")
 
 # Link to NVML
 if(NVML_LIB_PATH)
