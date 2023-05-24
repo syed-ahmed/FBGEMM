@@ -1593,6 +1593,9 @@ void compressed_indices_remap(
     compressed_indices_remap_ref<IndexType>(
         offsets_len,
         indices,
+        compressed_indices_mapping,
+        offsets,
+        weights,
         out_indices,
         out_offsets,
         out_weights);
