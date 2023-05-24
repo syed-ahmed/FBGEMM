@@ -444,7 +444,6 @@ else()
       ${fbgemm_sources_normal}
       ${fbgemm_sources_avx2}
       ${fbgemm_sources_avx512})
-      ${fbgemm_sources_normal})
   else()
     set(fbgemm_sources
       ${fbgemm_sources_normal})
